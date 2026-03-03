@@ -1,221 +1,85 @@
 import Eitri from 'eitri-bifrost'
-import { getProductBySlug } from './ProductService'
 
-/**
- * Abre o EitriApp de detalhe do produto
- * @param {(object)} product - produto inteiro.
- */
-export const openProduct = async product => {
+export const openHome = async (params = {}) => {
 	try {
-		Eitri.navigation.open({
-			slug: 'pdp',
-			initParams: { product: product },
+		await eitriNavigationOpen({
+			slug: 'home',
+			initParams: params,
 			replace: true
 		})
-	} catch (e) {
-		console.error('navigate to PDP: Error', e)
-		Eitri.close()
-	}
-}
-
-export const openProductBySlug = async slug => {
-	try {
-		Eitri.navigation.open({
-			slug: 'pdp',
-			initParams: { slug },
-			replace: true
-		})
-	} catch (e) {
-		console.error('navigate to PDP: Error', e)
-		Eitri.close()
-	}
-}
-
-function resolveFacets(facet) {
-	let query = null
-
-	const facets = facet.filter(item => {
-		if (item.key === 'ft') {
-			query = item['value']
-			return false
-		}
-		return true
-	})
-
-	const normalizedPath = { facets: facets }
-
-	if (query) {
-		normalizedPath.query = query
-	}
-
-	return normalizedPath
-}
-
-/**
- * Abre o EitriApp de home
- */
-export const openHome = async deeplink => {
-	try {
-		let params = {}
-		if (deeplink?.deeplinkFacets) {
-			params = resolveFacets(deeplink?.deeplinkFacets)
-		}
-
-		if (deeplink?.sort) {
-			params.sort = deeplink?.sort
-		}
-
-		if (deeplink) {
-			Eitri.navigation.open({
-				slug: 'home',
-				initParams: { params, route: 'ProductCatalog' },
-				replace: true
-			})
-		}
 	} catch (e) {
 		console.error('navigate to Home: Error', e)
-		Eitri.close()
+		closeEitriApp()
 	}
 }
 
-export const openCheckout = async () => {
+export const openProduct = async params => {
 	try {
-		Eitri.navigation.open({
+		await eitriNavigationOpen({
+			slug: 'pdp',
+			initParams: params,
+			replace: true
+		})
+	} catch (e) {
+		console.error('navigate to PDP: Error', e)
+		closeEitriApp()
+	}
+}
+
+export const openCart = async (params = {}) => {
+	try {
+		await eitriNavigationOpen({
+			slug: 'cart',
+			initParams: params,
+			replace: true
+		})
+	} catch (e) {
+		console.error('navigate to Cart: Error', e)
+		closeEitriApp()
+	}
+}
+
+export const openCheckout = async (params = {}) => {
+	try {
+		await eitriNavigationOpen({
 			slug: 'checkout',
+			initParams: params,
 			replace: true
 		})
 	} catch (e) {
 		console.error('navigate to Checkout: Error', e)
-		Eitri.close()
+		closeEitriApp()
 	}
 }
 
-/**
- * Abre o EitriApp relacionado ao deeplink da push notification
- */
-
-export const normalizePath = path => {
-	let pathComponents = decodeURIComponent(path).split('?')
-	let pathData = pathComponents[0].split('/').filter(Boolean)
-	let queryParams = new URLSearchParams(pathComponents[1])
-	let normalizedData = { facets: [] }
-
-	if (queryParams.has('map')) {
-		let mapKeys = queryParams.get('map').split(',')
-		pathData.forEach((value, index) => {
-			if (mapKeys[index] === 'ft') {
-				normalizedData.query = value
-			} else {
-				normalizedData.facets.push({
-					key: mapKeys[index],
-					value: value
-				})
-			}
-		})
-	}
-
-	if (path?.includes('filter')) {
-		const paramsArray = path.split('&')
-
-		paramsArray.forEach(param => {
-			if (param.startsWith('filter.')) {
-				const [keyWithFilter, value] = param.split('=')
-				const key = keyWithFilter.replace('filter.', '')
-				normalizedData.facets.push({
-					key: key,
-					value: decodeURIComponent(value)
-				})
-			}
-		})
-	}
-	if (!path?.includes('filter') && !queryParams.has('map')) {
-		pathData.forEach((value, index) => {
-			normalizedData.facets.push({
-				key: `category-${index + 1}`,
-				value: value
-			})
-		})
-	}
-
-	if (path?.includes('sort')) {
-		const sortMatch = path?.match(/sort=([^&]*)/)
-		normalizedData.sort = sortMatch ? decodeURIComponent(sortMatch[1]) : ''
-	}
-
-	for (let [key, value] of queryParams.entries()) {
-		if (key !== 'map') {
-			normalizedData[key] = value
-		}
-	}
-
-	return normalizedData
-}
-
-export const navigateHome = async (facets, title, type) => {
-	let initParams
-
-	if (facets.includes('?')) {
-		const normalize = normalizePath(facets)
-		initParams = { facets: normalize?.facets, sort: normalize?.sort, route: 'ProductCatalog', title }
-	} else {
-		initParams = { facets: [{ key: type, value: facets }], route: 'ProductCatalog', title }
-	}
-
+export const openAccount = async (params = {}) => {
 	try {
-		Eitri.navigation.open({
-			slug: 'home',
-			initParams: initParams,
+		await eitriNavigationOpen({
+			slug: 'account',
+			initParams: params,
 			replace: true
 		})
 	} catch (e) {
-		console.error('navigate to Home: Error', e)
-		Eitri.close()
-	}
-}
-
-export const navigateSearch = async value => {
-	try {
-		Eitri.navigation.open({
-			slug: 'home',
-			initParams: { searchTerm: value, route: 'Search' },
-			replace: true
-		})
-	} catch (e) {
-		console.error('navigate to Home: Error', e)
-		Eitri.close()
-	}
-}
-
-export const navigateToCategory = async (category, title) => {
-	const normalizedPath = normalizePath(category)
-	try {
-		Eitri.navigation.open({
-			slug: 'home',
-			initParams: { params: normalizedPath, route: 'ProductCatalog', title },
-			replace: true
-		})
-	} catch (e) {
-		console.error('navigate to Home: Error', e)
-		Eitri.close()
+		console.error('navigate to Account: Error', e)
+		closeEitriApp()
 	}
 }
 
 export const openEitriApp = async (slug, params) => {
 	try {
-		Eitri.navigation.open({
+		await eitriNavigationOpen({
 			slug,
 			initParams: params,
 			replace: true
 		})
 	} catch (e) {
 		console.error('navigate to Home: Error', e)
-		Eitri.close()
+		closeEitriApp()
 	}
 }
 
 export const openRedirectLinkBrowser = async deeplink => {
 	try {
-		console.log('openRedirectLinkBrowser')
 		const { applicationData } = await Eitri.getConfigs()
         let inApp = false
 
@@ -229,10 +93,10 @@ export const openRedirectLinkBrowser = async deeplink => {
 			url: url,
 			inApp: inApp
 		})
-		Eitri.close()
+		closeEitriApp()
 	} catch (error) {
 		console.error('Erro ao processar o deep link de busca', error)
-		Eitri.close()
+		closeEitriApp()
 	}
 }
 
@@ -246,9 +110,26 @@ export const openBrowser = async (url, inApp = true) => {
 			url: formatedUrl.toString(),
 			inApp
 		})
-		Eitri.close()
+		closeEitriApp()
 	} catch (error) {
 		console.error('Erro ao processar o deep link de busca', error)
-		Eitri.close()
+		closeEitriApp()
 	}
+}
+
+let appIsOpen = true
+// centralizando Eitri.navigation.open, para melhorar debug de codigo
+export const eitriNavigationOpen = params => {
+	if (appIsOpen) {
+		// console.log('eitriNavigationOpen', params)
+		return Eitri.navigation.open(params)
+	} 
+}
+
+// centralizando Eitri.close, correção para condição de corrida
+export const closeEitriApp = async () => {
+	if (appIsOpen) {
+		appIsOpen = false
+		await Eitri.close()
+	} 
 }

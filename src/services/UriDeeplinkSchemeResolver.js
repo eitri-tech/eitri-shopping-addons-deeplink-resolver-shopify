@@ -1,172 +1,83 @@
-import { getProductById, getProductBySlug } from './ProductService'
-import { openBrowser, openEitriApp, openProduct } from './NavigationService'
 import Eitri from 'eitri-bifrost'
-import { resolveDeeplinkFromRemoteConfig } from './DeeplinkResolver'
-import { delay } from './UtilService'
+import { closeEitriApp, openAccount, openBrowser, openCart, openHome, openProduct } from './NavigationService'
 
-const resolveDeeplinkToProduct = async deeplink => {
-	try {
-		let product = null
+export const resolveUriDeeplinkScheme = async deeplink => {
+	const fullPath = deeplink.replace(/^[a-zA-Z]+:\/\//, '')
 
-		if (deeplink?.startsWith('product/id')) {
-			const productId = deeplink.split('product/id/')[1]
-			product = await getProductById(productId)
-		}
-
-		if (deeplink?.startsWith('product/slug')) {
-			const productSlug = deeplink.split('product/slug/')[1]
-			const _product = await getProductBySlug(productSlug)
-			product = _product?.[0]
-		}
-
-		if (product) {
-			openProduct(product)
-			return true
-		}
-
-		return false
-	} catch (error) {
-		console.error('Erro ao processar o deep link do produto', error)
-		return false
-	}
-}
-
-const resolveCollection = async (deeplink, params) => {
-	try {
-		if (deeplink?.startsWith('collection')) {
-			const paramsObj = Object.fromEntries(new URLSearchParams(params))
-			openEitriApp('home', {
-				facets: [{ key: 'productClusterIds', value: paramsObj?.filter || paramsObj?.filters }],
-				sort: paramsObj?.O || paramsObj?.order,
-				route: 'ProductCatalog'
-			})
-			return true
-		}
-
-		return false
-	} catch (error) {
-		console.error('Erro ao processar o deep link do produto', error)
-		return false
-	}
-}
-
-const resolveCategory = async (deeplink, params) => {
-	if (!deeplink) return false
-
-	if (!deeplink?.startsWith('category')) {
+	if (!fullPath) {
+		closeEitriApp()
 		return
 	}
 
-	const categories = deeplink.replace('category/', '').split('/')
-	const facets = categories.map((category, index) => ({
-		key: `category-${index + 1}`,
-		value: category
-	}))
-	if (!facets) return false
-
-	const paramsObj = Object.fromEntries(new URLSearchParams(params))
-	openEitriApp('home', {
-		facets,
-		route: 'ProductCatalog',
-		sort: paramsObj?.O || paramsObj?.order || '',
-		filter: params
-	})
-	return true
-}
-
-const resolveWebView = async (deeplink, params) => {
-	if (!deeplink) return false
-
-	if (!deeplink.startsWith('webview')) {
-		return false
-	}
-
-	if (deeplink.startsWith('webview/inapp/')) {
-		const url = deeplink.replace(/^webview\/inapp\//i, '')
-		openBrowser(`${decodeURIComponent(url)}${params ? '?'+params : ''}`, true)
-	} else {
-		const url = deeplink.replace(/^webview\//i, '')
-		openBrowser(`${decodeURIComponent(url)}${params ? '?'+params : ''}`, false)
-	}
-	return true
-}
-
-const resolveSearch = async (deeplink, params) => {
-	if (!deeplink) return false
-
-	if (!deeplink.startsWith('search')) {
-		return false
-	}
-
-	const term = deeplink.split('search/')[1]
-	const paramsObj = Object.fromEntries(new URLSearchParams(params))
-	openEitriApp('home', {
-		route: 'Search',
-		searchTerm: term,
-		sort: paramsObj?.O || paramsObj?.order,
-		filter: params
-	})
-	return true
-}
-
-const resolveGeneric = async (deeplink, params) => {
-	if (!deeplink) return false
-
-	if (deeplink.startsWith('cart')) {
-		const cartId = deeplink.split('cart/')[1]
-		openEitriApp('cart', {
-			cartId: cartId
-		})
-		return true
-	}
-
-	if (deeplink.startsWith('account')) {
-		const viewName = deeplink.split('account/')[1]
-		openEitriApp('account', {
-			route: viewName || ''
-		})
-		return true
-	}
-
-	if (deeplink.startsWith('home')) {
-		openEitriApp('home')
-		return true
+	let [path, queryString] = fullPath.split('?')
+	if (!path) {
+		closeEitriApp()
+		return
 	}
 	
-	return false
-}
+	path = path.toLowerCase()
 
-export const resolveUriDeeplinkScheme = async deeplink => {
-	const [, basePath] = deeplink.split('://')
-	const [path, queryParams] = basePath.split(/\?(.*)/).filter(Boolean)
-
-	const deeplinkWays = [
-		resolveDeeplinkFromRemoteConfig,
-		resolveDeeplinkToProduct,
-		resolveCollection,
-		resolveCategory,
-		resolveWebView,
-		resolveSearch,
-		resolveGeneric
-	]
-
-	try {
-		for (const way of deeplinkWays) {
-			try {
-				
-				// console.log('executando:', way.name)
-				
-				let result = await way(path, queryParams)
-				if (result) {
-					return true
-				}
-			} catch (error) {
-				console.error('Erro ao processar o deep link', way.name, error)
-			}
+	if (path.startsWith('product/id/')) {
+		const productId = path.replace('product/id/', '')
+		if (productId) {
+			await openProduct({productId})
+			return
 		}
-		Eitri.close()
-	} catch (error) {
-		console.error('Erro ao processar o deep link', error)
-		Eitri.close()
+		closeEitriApp()
+		return
 	}
+
+	if (path.startsWith('product/slug/')) {
+		const match = path.match(/-(\d+)$/)
+		const productSlug = match ? match[1] : null
+		if (productSlug) {
+			await openProduct({productSlug})
+			return
+		}
+		closeEitriApp()
+		return
+	}
+
+	if (path.startsWith('category/') || path.startsWith('collection/')) {
+		const url = fullPath.replace(/^(category\/|collection\/)/, '')
+		await openHome({url})
+		return
+	}
+
+	if (path.startsWith('search/')) {
+		const searchTerm = path.replace(/^(search\/)/, '')
+		await openHome({searchTerm})
+		return
+	}
+
+	if (path === 'home') {
+		await Eitri.exposedApis.appState.goHome()
+		return
+	}
+	
+	if (path.startsWith('cart/') || path === 'cart') {
+		const checkoutId = path.replace('cart/', '')
+		await openCart({checkoutId})
+		return
+	}
+	
+	if (path.startsWith('account/') || path === 'account') {
+		const page = path.replace('account/', '')
+		await openAccount({page})
+		return
+	}
+	
+	if (path.startsWith('webview/')) {
+		const url = path.replace(/^(webview\/)/i, '')
+
+		if (url?.startsWith('inapp/')) {
+			const formatedUrl = decodeURIComponent(url.replace(/^inapp\//i, ''))
+			openBrowser(formatedUrl, true)
+		} else {
+			openBrowser(decodeURIComponent(url), false)
+		}
+		return
+	}
+
+	closeEitriApp()
 }

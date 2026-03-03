@@ -1,9 +1,8 @@
-import { Vtex } from 'eitri-shopping-vtex-shared'
 
 export const getProductBySlug = async slug => {
-	return await Vtex.catalog.getProductBySlug(slug)
+	// return await catalog.getProductBySlug(slug)
 }
 
 export const getProductById = async id => {
-	return await Vtex.catalog.getProductById(id)
+	// return await catalog.getProductById(id)
 }

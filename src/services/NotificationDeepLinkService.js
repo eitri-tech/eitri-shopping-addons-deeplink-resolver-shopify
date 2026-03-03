@@ -1,36 +1,37 @@
 import Eitri from 'eitri-bifrost'
-import { navigateHome, navigateSearch, navigateToCategory, openProductBySlug } from './NavigationService'
+import { closeEitriApp, openHome, openProduct } from './NavigationService'
 
-export const deeplinkActionsExecutor = content => {
+export const deeplinkActionsExecutor = async content => {
 	if (!content || !content.action) {
 		console.error('Deeplink action inválida ou ausente:', content)
 		return false
 	}
 
-	const { action, value, title = '' } = content
+	const { action, value, order, filter, title = '' } = content
 
 	try {
 		switch (action) {
 			case 'search':
-				navigateSearch(value)
+				openHome({...content, route: 'Search', searchTerm: decodeURIComponent(value)})
 				break
 			case 'collection':
-				navigateHome(value, title, 'productClusterIds')
+				openHome(content)
 				break
 			case 'category':
-				navigateToCategory(value, title)
+				openHome(content)
 				break
 			case 'brand':
-				navigateHome(value, title, 'brand')
+				openHome(content)
 				break
 			case 'product':
-				openProductBySlug(value)
+				openProduct(content)
 				break
 			default:
 				console.error(`Unknown action type: ${action}`)
-				Eitri.close()
+				closeEitriApp()
 				return false
 		}
+		return true
 	} catch (error) {
 		console.error('Erro ao executar deeplink:', error)
 		return false
