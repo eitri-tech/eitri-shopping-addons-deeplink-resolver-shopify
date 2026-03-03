@@ -10,11 +10,11 @@ Additionally, you can configure custom rules and paths for your deeplinks throug
 
 You can also create a copy of the Deeplink Resolver in your application to further customize behaviors using our template.
 
-### Supported Deeplinks (Vtex)
+### Supported Deeplinks (Shopify)
 
 To know more about supported deeplinks go to [our deeplink documentation](https://docs.eitri.tech/en/eitri-shopping/deeplinks/).
 
-### Enabling the Default Deeplink Resolver (For Vtex)
+### Enabling the Default Deeplink Resolver (For Shopify)
 
 To enable the deeplink resolver with default behaviors, follow these steps:
 
@@ -35,7 +35,7 @@ This entry defines which Eitri-app will be responsible for processing your deepl
 
 ```json
     "deeplinkResolver": {
-        "slug": "eitri-shopping-addons-deeplink-resolver"
+        "slug": "eitri-shopping-addons-deeplink-resolver-shopify"
     }
 ```
 
@@ -153,7 +153,7 @@ Where:
         ]
     },
     "deeplinkResolver": {
-        "slug": "eitri-shopping-addons-deeplink-resolver"
+        "slug": "eitri-shopping-addons-deeplink-resolver-shopify"
     }
 }
 ```

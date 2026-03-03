@@ -121,7 +121,7 @@ async function checkAndPushInDirectory(directoryPath, token) {
 
 	try {
 		// const projects = listProjects(directoryPath)
-		const projects = ['eitri-shopping-addons-deeplink-resolver']
+		const projects = ['eitri-shopping-addons-deeplink-resolver-shopify']
 		// console.log('Projetos encontrados:', projects)
 
 		const updatedProjects = []
