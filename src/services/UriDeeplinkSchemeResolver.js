@@ -10,17 +10,19 @@ export const resolveUriDeeplinkScheme = async deeplink => {
 	}
 
 	let [path, queryString] = fullPath.split('?')
+	console.log('path', path, queryString)
 	if (!path) {
 		closeEitriApp()
 		return
 	}
 	
-	path = path.toLowerCase()
-
-	if (path.startsWith('product/id/')) {
-		const productId = path.replace('product/id/', '')
-		if (productId) {
-			await openProduct({productId})
+	if (path.toLowerCase().startsWith('product/id/')) {
+		let id = path.replace(/product\/id\//i, '').replace(/\/$/g, '')
+		if (id) {
+			if (!isNaN(id)) {
+				id = `gid://shopify/Product/${id}`
+			}
+			await openProduct({id: id})
 			return
 		}
 		closeEitriApp()
@@ -28,10 +30,9 @@ export const resolveUriDeeplinkScheme = async deeplink => {
 	}
 
 	if (path.startsWith('product/slug/')) {
-		const match = path.match(/-(\d+)$/)
-		const productSlug = match ? match[1] : null
-		if (productSlug) {
-			await openProduct({productSlug})
+		let handle = path.replace(/product\/slug\//i, '').replace(/\/$/g, '')
+		if (handle) {
+			await openProduct({handle})
 			return
 		}
 		closeEitriApp()
@@ -39,14 +40,28 @@ export const resolveUriDeeplinkScheme = async deeplink => {
 	}
 
 	if (path.startsWith('category/') || path.startsWith('collection/')) {
-		const url = fullPath.replace(/^(category\/|collection\/)/, '')
-		await openHome({url})
+		const handle = path.replace(/^(category\/|collection\/)/, '')
+		await openHome({
+			route: 'ProductCatalog',
+			params: {
+				type: 'collection',
+				handle
+			}
+		})
+		closeEitriApp()
 		return
 	}
 
+	// // export type ActionType = 'collection' | 'search' | 'product'
 	if (path.startsWith('search/')) {
 		const searchTerm = path.replace(/^(search\/)/, '')
-		await openHome({searchTerm})
+		await openHome({
+			route: 'Search',
+			params: {
+				type: 'search',
+				query: searchTerm
+			}
+		})
 		return
 	}
 

@@ -73,7 +73,7 @@ export default function Home(props) {
 
 	return (
 		<Window>
-			<Text>...</Text>
+			<Text></Text>
 		</Window>
 	)
 }
