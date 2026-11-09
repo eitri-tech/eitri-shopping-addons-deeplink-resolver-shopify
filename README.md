@@ -13,6 +13,16 @@ Se preferir você pode tambem criar uma cópia do Deeplink Resolver em sua aplic
 ### Deeplinks suportados (Shopify)
 Para saber mais sobre os deeplinks suportados acesse nossa [documentação sobre deeplinks](https://docs.eitri.tech/pt/eitri-shopping/deeplinks/).
 
+#### Abrir qualquer Eitri-app
+
+`<esquema>://app/<slug-do-eitri-app>?chave=valor` abre o Eitri-app do slug informado e entrega a query como [parâmetros de inicialização](https://cdn.83io.com.br/library/eitri-bifrost/doc/latest/classes/Bifrost.html#getInitializationInfos).
+
+```
+minhaloja://app/minhaloja-ritual?route=Ritual&routineSlug=whey-protein
+```
+
+O Eitri-app recebe `{ route: 'Ritual', routineSlug: 'whey-protein' }` em `Eitri.getInitializationInfos()`. Os valores chegam como texto: converta o que precisar ser número ou booleano. Codifique os valores na URL (`encodeURIComponent`).
+
 ### Ativando o Deeplink Resolver padrão (Para Shopify)
 
 Para ativar o deeplink resolver com os comportamentos padrão, siga os seguintes passos:

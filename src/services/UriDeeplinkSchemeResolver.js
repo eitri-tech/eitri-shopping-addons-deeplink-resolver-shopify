@@ -1,8 +1,32 @@
 import Eitri from 'eitri-bifrost'
-import { closeEitriApp, openAccount, openBrowser, openCart, openHome, openProduct } from './NavigationService'
+import { closeEitriApp, openAccount, openBrowser, openCart, openEitriApp, openHome, openProduct } from './NavigationService'
 
+/**
+ * Lê a query do deeplink como parâmetros de inicialização.
+ * Os valores chegam como string: quem recebe converte o que precisar ser número ou booleano.
+ * @param {string | undefined} queryString
+ * @returns {Record<string, string>} `{}` quando não há query ou ela não pode ser lida
+ */
+const queryParamsOf = queryString => {
+	if (!queryString) return {}
+	try {
+		return Object.fromEntries(new URLSearchParams(queryString))
+	} catch (error) {
+		console.error('Erro ao ler os parâmetros do deeplink', error)
+		return {}
+	}
+}
+
+/**
+ * Abre a tela do app para um deeplink de esquema próprio. O esquema aceita hífen e número
+ * (ex.: `renovabe-dev://`).
+ *
+ * `<esquema>://app/<slug-do-eitri-app>?chave=valor` abre aquele Eitri-app com a query como
+ * parâmetros de inicialização, lidos lá com `Eitri.getInitializationInfos()`.
+ * @param {string} deeplink
+ */
 export const resolveUriDeeplinkScheme = async deeplink => {
-	const fullPath = deeplink.replace(/^[a-zA-Z]+:\/\//, '')
+	const fullPath = deeplink.replace(/^[a-zA-Z][a-zA-Z0-9+.-]*:\/\//, '')
 
 	if (!fullPath) {
 		closeEitriApp()
@@ -82,6 +106,16 @@ export const resolveUriDeeplinkScheme = async deeplink => {
 		return
 	}
 	
+	if (path.startsWith('app/')) {
+		const slug = path.replace(/^app\//, '').replace(/\/$/g, '')
+		if (slug) {
+			await openEitriApp(slug, queryParamsOf(queryString))
+			return
+		}
+		closeEitriApp()
+		return
+	}
+
 	if (path.startsWith('webview/')) {
 		const url = path.replace(/^(webview\/)/i, '')
 
